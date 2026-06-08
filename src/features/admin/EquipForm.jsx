@@ -12,6 +12,8 @@ export function EquipForm({ form: initial, onSave, onClose }) {
     return () => { document.removeEventListener('keydown', esc); document.body.style.overflow = ''; };
   }, []);
   const setSpec = (i, v) => setForm(f => ({ ...f, specs: f.specs.map((s,idx)=>idx===i?v:s) }));
+  const addSpec = () => setForm(f => ({ ...f, specs: [...(f.specs||[]), ''] }));
+  const delSpec = (i) => setForm(f => ({ ...f, specs: f.specs.filter((_,idx)=>idx!==i) }));
 
   return (
     <div className="fixed inset-0 z-50 modal-backdrop flex items-end md:items-center justify-center p-0 md:p-6 fade-in" onClick={onClose}>
@@ -66,13 +68,22 @@ export function EquipForm({ form: initial, onSave, onClose }) {
             </div>
           </div>
           <div>
-            <label className="font-mono text-[11px] uppercase tracking-wider text-muted">스펙 (최대 3개)</label>
+            <label className="font-mono text-[11px] uppercase tracking-wider text-muted">스펙 (개수 제한 없음)</label>
             <div className="space-y-2 mt-1">
-              {[0,1,2].map(i => (
-                <input key={i} value={form.specs[i]||''} onChange={e=>setSpec(i,e.target.value)}
-                  className="w-full border border-line focus:border-ink outline-none px-3 py-2.5 text-[13px] bg-transparent" placeholder={`스펙 ${i+1}`}/>
+              {(form.specs && form.specs.length ? form.specs : ['']).map((s,i) => (
+                <div key={i} className="flex gap-2">
+                  <input value={s||''} onChange={e=>setSpec(i,e.target.value)}
+                    className="flex-1 border border-line focus:border-ink outline-none px-3 py-2.5 text-[13px] bg-transparent" placeholder={`스펙 ${i+1}`}/>
+                  <button onClick={()=>delSpec(i)} className="shrink-0 border border-line hover:border-ink px-2.5 text-muted hover:text-ink" aria-label="스펙 삭제">
+                    <Ico.trash className="w-4 h-4"/>
+                  </button>
+                </div>
               ))}
+              <button onClick={addSpec} className="w-full border border-dashed border-line hover:border-ink text-[12px] text-muted hover:text-ink py-2 inline-flex items-center justify-center gap-1.5">
+                <Ico.plus className="w-3.5 h-3.5"/> 스펙 추가
+              </button>
             </div>
+            <p className="text-[11px] text-muted mt-1.5">스펙은 장비 상세에서 전부 표시돼요. (목록 카드에는 부제만 노출)</p>
           </div>
           <button onClick={() => onSave(form)} className="w-full bg-ink text-bg py-4 text-[13px] hover-lift mt-2">
             {form._new ? '등록하기' : '저장하기'}
