@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Ico } from '../../components/Ico';
 import { ImageInput } from '../../components/ImageInput';
 import { ADMIN_EMAIL, CATEGORIES, DEFAULT_EQUIPMENT } from '../../data/defaults';
@@ -20,6 +20,43 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
   const [orderQuery, setOrderQuery] = useState('');
   const [userQuery, setUserQuery] = useState('');
   const users = store.read('skeart_users', []).filter(u => u.email !== ADMIN_EMAIL);
+
+  // ── 콘텐츠 임시(draft) 상태: 저장 버튼을 눌러야 실제 반영 ──
+  const [draft, setDraft] = useState({ homeBanner, eventBanners, brands, works, discounts, notices, sets, bestIds });
+  // 외부 데이터가 바뀌면(클라우드 로드 등) draft 동기화
+  useEffect(() => { setDraft({ homeBanner, eventBanners, brands, works, discounts, notices, sets, bestIds }); },
+    [homeBanner, eventBanners, brands, works, discounts, notices, sets, bestIds]);
+
+  // draft 변경 여부
+  const dirty = JSON.stringify(draft) !== JSON.stringify({ homeBanner, eventBanners, brands, works, discounts, notices, sets, bestIds });
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  const saveDraft = () => {
+    setHomeBanner(draft.homeBanner);
+    setEventBanners(draft.eventBanners);
+    setBrands(draft.brands);
+    setWorks(draft.works);
+    setDiscounts(draft.discounts);
+    setNotices(draft.notices);
+    setSets(draft.sets);
+    setBestIds(draft.bestIds);
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 2000);
+  };
+  const resetDraft = () => setDraft({ homeBanner, eventBanners, brands, works, discounts, notices, sets, bestIds });
+
+  // 콘텐츠 탭에서 쓰는 draft 기반 값·setter (실제 setter 대신 사용)
+  const dHomeBanner = draft.homeBanner, setDHomeBanner = (fn) => setDraft(d => ({ ...d, homeBanner: typeof fn==='function'?fn(d.homeBanner):fn }));
+  const dEventBanners = draft.eventBanners, setDEventBanners = (fn) => setDraft(d => ({ ...d, eventBanners: typeof fn==='function'?fn(d.eventBanners):fn }));
+  const dBrands = draft.brands, setDBrands = (fn) => setDraft(d => ({ ...d, brands: typeof fn==='function'?fn(d.brands):fn }));
+  const dWorks = draft.works, setDWorks = (fn) => setDraft(d => ({ ...d, works: typeof fn==='function'?fn(d.works):fn }));
+  const dDiscounts = draft.discounts, setDDiscounts = (fn) => setDraft(d => ({ ...d, discounts: typeof fn==='function'?fn(d.discounts):fn }));
+  const dNotices = draft.notices, setDNotices = (fn) => setDraft(d => ({ ...d, notices: typeof fn==='function'?fn(d.notices):fn }));
+  const dSets = draft.sets, setDSets = (fn) => setDraft(d => ({ ...d, sets: typeof fn==='function'?fn(d.sets):fn }));
+  const dBestIds = draft.bestIds, setDBestIds = (fn) => setDraft(d => ({ ...d, bestIds: typeof fn==='function'?fn(d.bestIds):fn }));
+
+  // 콘텐츠 탭인지 (저장 바 노출용)
+  const CONTENT_TABS = ['home','event','brand','works','discount','notice','set','best'];
 
   const blank = { name:'', cat:'cam', sub:'', price:0, stock:1, imageUrl:'', specs:[''] };
   const startNew = () => setEditing({ ...blank, _new:true });
@@ -51,15 +88,15 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
     { id:'gear',  label:`장비 관리 · ${equipment.length}` },
     { id:'order', label:`문의 내역 · ${orders.length}` },
     { id:'user',  label:`회원 · ${users.length}` },
-    { id:'set',   label:`세트 상품 · ${sets.length}` },
-    { id:'best',  label:`베스트 · ${bestIds.length}` },
-    { id:'discount', label:`할인 이벤트 · ${discounts.length}` },
+    { id:'set',   label:`세트 상품 · ${dSets.length}` },
+    { id:'best',  label:`베스트 · ${dBestIds.length}` },
+    { id:'discount', label:`할인 이벤트 · ${dDiscounts.length}` },
     { id:'_sep',  label:'— 화면 콘텐츠' },
     { id:'home',  label:'홈 배너' },
-    { id:'event', label:`이벤트 배너 · ${eventBanners.length}` },
-    { id:'brand', label:`제조사 · ${brands.length}` },
-    { id:'works', label:`촬영 영상 · ${works.length}` },
-    { id:'notice', label:`팝업 공지 · ${notices.length}` },
+    { id:'event', label:`이벤트 배너 · ${dEventBanners.length}` },
+    { id:'brand', label:`제조사 · ${dBrands.length}` },
+    { id:'works', label:`촬영 영상 · ${dWorks.length}` },
+    { id:'notice', label:`팝업 공지 · ${dNotices.length}` },
   ];
 
   return (
@@ -250,23 +287,23 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
         <div>
           <div className="flex justify-between items-center mb-5">
             <p className="text-[14px] text-muted">홈 메인 배너입니다. PC용(가로 16:9)과 모바일용(세로 4:5) 이미지를 각각 올릴 수 있어요. 여러 장 등록하면 자동 회전합니다. 모바일용을 비우면 PC 이미지를 그대로 씁니다.</p>
-            <button onClick={() => setHomeBanner(prev => [...(Array.isArray(prev)?prev:[]), { pc:'', mobile:'' }])}
+            <button onClick={() => setDHomeBanner(prev => [...(Array.isArray(prev)?prev:[]), { pc:'', mobile:'' }])}
               className="text-[13px] bg-ink text-bg px-4 py-2 hover-lift inline-flex items-center gap-2 shrink-0"><Ico.plus className="w-3.5 h-3.5"/> 배너 추가</button>
           </div>
           <div className="space-y-3">
-            {(Array.isArray(homeBanner)?homeBanner:[]).map((raw, i) => {
+            {(Array.isArray(dHomeBanner)?dHomeBanner:[]).map((raw, i) => {
               const b = typeof raw === 'string' ? { pc: raw, mobile: '' } : (raw || { pc:'', mobile:'' });
-              const upd = (patch) => setHomeBanner(prev => prev.map((x,idx) => idx===i ? { ...(typeof x==='string'?{pc:x,mobile:''}:x), ...patch } : x));
+              const upd = (patch) => setDHomeBanner(prev => prev.map((x,idx) => idx===i ? { ...(typeof x==='string'?{pc:x,mobile:''}:x), ...patch } : x));
               return (
               <div key={i} className="border border-line p-4">
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-mono text-[12px] text-muted">배너 {String(i+1).padStart(2,'0')}</span>
                   <div className="flex gap-1">
-                    <button onClick={() => i>0 && setHomeBanner(prev => { const a=[...prev]; [a[i-1],a[i]]=[a[i],a[i-1]]; return a; })}
+                    <button onClick={() => i>0 && setDHomeBanner(prev => { const a=[...prev]; [a[i-1],a[i]]=[a[i],a[i-1]]; return a; })}
                       disabled={i===0} className="text-[12px] border border-line hover:border-ink px-2 py-1 disabled:opacity-30">↑</button>
-                    <button onClick={() => i<homeBanner.length-1 && setHomeBanner(prev => { const a=[...prev]; [a[i+1],a[i]]=[a[i],a[i+1]]; return a; })}
-                      disabled={i===homeBanner.length-1} className="text-[12px] border border-line hover:border-ink px-2 py-1 disabled:opacity-30">↓</button>
-                    <button onClick={() => setHomeBanner(prev => prev.filter((_,idx)=>idx!==i))}
+                    <button onClick={() => i<dHomeBanner.length-1 && setDHomeBanner(prev => { const a=[...prev]; [a[i+1],a[i]]=[a[i],a[i+1]]; return a; })}
+                      disabled={i===dHomeBanner.length-1} className="text-[12px] border border-line hover:border-ink px-2 py-1 disabled:opacity-30">↓</button>
+                    <button onClick={() => setDHomeBanner(prev => prev.filter((_,idx)=>idx!==i))}
                       className="text-muted hover:text-ink p-1"><Ico.trash className="w-4 h-4"/></button>
                   </div>
                 </div>
@@ -293,7 +330,7 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
               </div>
               );
             })}
-            {(!Array.isArray(homeBanner) || homeBanner.length === 0) && <div className="border border-line py-12 text-center text-muted text-[14px]">등록된 홈 배너가 없습니다.</div>}
+            {(!Array.isArray(dHomeBanner) || dHomeBanner.length === 0) && <div className="border border-line py-12 text-center text-muted text-[14px]">등록된 홈 배너가 없습니다.</div>}
           </div>
         </div>
       )}
@@ -303,12 +340,12 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
         <div>
           <div className="flex justify-between items-center mb-5">
             <p className="text-[14px] text-muted">장비 페이지 상단에서 자동 회전하는 이벤트 배너입니다. 이미지만 넣으면 됩니다. (16:9 또는 가로형 권장)</p>
-            <button onClick={() => setEventBanners(prev => [...prev, { imageUrl:'' }])}
+            <button onClick={() => setDEventBanners(prev => [...prev, { imageUrl:'' }])}
               className="text-[13px] bg-ink text-bg px-4 py-2 hover-lift inline-flex items-center gap-2 shrink-0"><Ico.plus className="w-3.5 h-3.5"/> 배너 추가</button>
           </div>
           <div className="space-y-3">
-            {eventBanners.map((b, i) => {
-              const upd = (patch) => setEventBanners(prev => prev.map((x,idx) => idx===i ? { ...x, ...patch } : x));
+            {dEventBanners.map((b, i) => {
+              const upd = (patch) => setDEventBanners(prev => prev.map((x,idx) => idx===i ? { ...x, ...patch } : x));
               return (
                 <div key={i} className="border border-line p-4 flex flex-col md:flex-row gap-4 md:items-center">
                   {/* 미리보기 썸네일 */}
@@ -322,17 +359,17 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
                       onChange={v => upd({ imageUrl:v })}/>
                   </div>
                   <div className="flex md:flex-col gap-1 shrink-0">
-                    <button onClick={() => i>0 && setEventBanners(prev => { const a=[...prev]; [a[i-1],a[i]]=[a[i],a[i-1]]; return a; })}
+                    <button onClick={() => i>0 && setDEventBanners(prev => { const a=[...prev]; [a[i-1],a[i]]=[a[i],a[i-1]]; return a; })}
                       disabled={i===0} className="text-[12px] border border-line hover:border-ink px-2 py-1 disabled:opacity-30">↑</button>
-                    <button onClick={() => i<eventBanners.length-1 && setEventBanners(prev => { const a=[...prev]; [a[i+1],a[i]]=[a[i],a[i+1]]; return a; })}
-                      disabled={i===eventBanners.length-1} className="text-[12px] border border-line hover:border-ink px-2 py-1 disabled:opacity-30">↓</button>
-                    <button onClick={() => setEventBanners(prev => prev.filter((_,idx)=>idx!==i))}
+                    <button onClick={() => i<dEventBanners.length-1 && setDEventBanners(prev => { const a=[...prev]; [a[i+1],a[i]]=[a[i],a[i+1]]; return a; })}
+                      disabled={i===dEventBanners.length-1} className="text-[12px] border border-line hover:border-ink px-2 py-1 disabled:opacity-30">↓</button>
+                    <button onClick={() => setDEventBanners(prev => prev.filter((_,idx)=>idx!==i))}
                       className="text-muted hover:text-ink p-1"><Ico.trash className="w-4 h-4"/></button>
                   </div>
                 </div>
               );
             })}
-            {eventBanners.length === 0 && <div className="border border-line py-12 text-center text-muted text-[14px]">등록된 이벤트 배너가 없습니다.</div>}
+            {dEventBanners.length === 0 && <div className="border border-line py-12 text-center text-muted text-[14px]">등록된 이벤트 배너가 없습니다.</div>}
           </div>
         </div>
       )}
@@ -342,18 +379,18 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
         <div>
           <div className="flex justify-between items-center mb-5">
             <p className="text-[14px] text-muted">장비 페이지의 세트 상품을 추가·편집합니다. 가격/정가로 할인율이 표시됩니다.</p>
-            <button onClick={() => setSets(prev => [...prev, { id:'set_'+Date.now().toString().slice(-6), name:'새 세트', price:0, listPrice:0, items:'', note:'' }])}
+            <button onClick={() => setDSets(prev => [...prev, { id:'set_'+Date.now().toString().slice(-6), name:'새 세트', price:0, listPrice:0, items:'', note:'' }])}
               className="text-[13px] bg-ink text-bg px-4 py-2 hover-lift inline-flex items-center gap-2"><Ico.plus className="w-3.5 h-3.5"/> 세트 추가</button>
           </div>
           <div className="space-y-4">
-            {sets.map((s, i) => {
-              const upd = (patch) => setSets(prev => prev.map((x,idx) => idx===i ? { ...x, ...patch } : x));
+            {dSets.map((s, i) => {
+              const upd = (patch) => setDSets(prev => prev.map((x,idx) => idx===i ? { ...x, ...patch } : x));
               return (
                 <div key={s.id} className="border border-line p-4">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <input value={s.name} onChange={e => upd({ name:e.target.value })} placeholder="세트 이름"
                       className="font-display text-lg border-b border-line focus:border-ink outline-none px-1 py-1 bg-transparent flex-1"/>
-                    <button onClick={() => setSets(prev => prev.filter((_,idx)=>idx!==i))} className="text-muted hover:text-ink p-1 shrink-0"><Ico.trash className="w-4 h-4"/></button>
+                    <button onClick={() => setDSets(prev => prev.filter((_,idx)=>idx!==i))} className="text-muted hover:text-ink p-1 shrink-0"><Ico.trash className="w-4 h-4"/></button>
                   </div>
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
@@ -380,7 +417,7 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
                 </div>
               );
             })}
-            {sets.length === 0 && <div className="border border-line py-12 text-center text-muted text-[14px]">등록된 세트 상품이 없습니다.</div>}
+            {dSets.length === 0 && <div className="border border-line py-12 text-center text-muted text-[14px]">등록된 세트 상품이 없습니다.</div>}
           </div>
         </div>
       )}
@@ -389,13 +426,13 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
       {tab==='best' && (
         <div>
           <p className="text-[14px] text-muted mb-2">홈 화면 "베스트 아이템"에 노출할 장비를 선택합니다. (권장 3개, 선택 순서대로 노출 · 미선택 시 기본 3개)</p>
-          <div className="text-[13px] mb-5">선택됨 <span className="font-bold">{bestIds.length}</span>개</div>
+          <div className="text-[13px] mb-5">선택됨 <span className="font-bold">{dBestIds.length}</span>개</div>
           <div className="border border-line divide-y divide-line max-h-[60vh] overflow-y-auto">
             {equipment.map(e => {
-              const on = bestIds.includes(e.id);
-              const order = bestIds.indexOf(e.id) + 1;
+              const on = dBestIds.includes(e.id);
+              const order = dBestIds.indexOf(e.id) + 1;
               return (
-                <button key={e.id} onClick={() => setBestIds(prev => on ? prev.filter(id=>id!==e.id) : [...prev, e.id])}
+                <button key={e.id} onClick={() => setDBestIds(prev => on ? prev.filter(id=>id!==e.id) : [...prev, e.id])}
                   className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#F7F7F7]">
                   <span className={`w-5 h-5 border flex items-center justify-center shrink-0 ${on ? 'bg-ink border-ink' : 'border-line'}`}>
                     {on && <span className="font-mono text-[11px] text-bg">{order}</span>}
@@ -407,8 +444,8 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
               );
             })}
           </div>
-          {bestIds.length > 0 && (
-            <button onClick={() => setBestIds([])} className="mt-4 text-[13px] border border-line hover:border-ink px-4 py-2">전체 해제</button>
+          {dBestIds.length > 0 && (
+            <button onClick={() => setDBestIds([])} className="mt-4 text-[13px] border border-line hover:border-ink px-4 py-2">전체 해제</button>
           )}
         </div>
       )}
@@ -418,12 +455,12 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
         <div>
           <div className="flex justify-between items-center mb-5">
             <p className="text-[14px] text-muted">사이트 방문 시 뜨는 팝업 공지입니다. 제목·내용·이미지를 넣을 수 있고, 여러 개면 하나씩 차례로 표시됩니다. 방문자가 "오늘 하루 보지 않기"를 누르면 그날은 다시 뜨지 않아요.</p>
-            <button onClick={() => setNotices(prev => [...prev, { id:'ntc_'+Date.now().toString().slice(-6), title:'', content:'', imageUrl:'', active:true }])}
+            <button onClick={() => setDNotices(prev => [...prev, { id:'ntc_'+Date.now().toString().slice(-6), title:'', content:'', imageUrl:'', active:true }])}
               className="text-[13px] bg-ink text-bg px-4 py-2 hover-lift inline-flex items-center gap-2 shrink-0"><Ico.plus className="w-3.5 h-3.5"/> 공지 추가</button>
           </div>
           <div className="space-y-4">
-            {notices.map((nt, i) => {
-              const upd = (patch) => setNotices(prev => prev.map((x,idx) => idx===i ? { ...x, ...patch } : x));
+            {dNotices.map((nt, i) => {
+              const upd = (patch) => setDNotices(prev => prev.map((x,idx) => idx===i ? { ...x, ...patch } : x));
               return (
                 <div key={nt.id} className={`border p-4 ${nt.active===false ? 'border-line opacity-60' : 'border-ink'}`}>
                   <div className="flex items-center justify-between gap-3 mb-3">
@@ -434,7 +471,7 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
                       </span>
                       {nt.active!==false ? '노출 중' : '숨김'}
                     </label>
-                    <button onClick={() => setNotices(prev => prev.filter((_,idx)=>idx!==i))} className="text-muted hover:text-ink p-1 shrink-0"><Ico.trash className="w-4 h-4"/></button>
+                    <button onClick={() => setDNotices(prev => prev.filter((_,idx)=>idx!==i))} className="text-muted hover:text-ink p-1 shrink-0"><Ico.trash className="w-4 h-4"/></button>
                   </div>
                   <div className="grid md:grid-cols-[180px_1fr] gap-4">
                     {/* 이미지 */}
@@ -463,7 +500,7 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
                 </div>
               );
             })}
-            {notices.length === 0 && <div className="border border-line py-12 text-center text-muted text-[14px]">등록된 팝업 공지가 없습니다.</div>}
+            {dNotices.length === 0 && <div className="border border-line py-12 text-center text-muted text-[14px]">등록된 팝업 공지가 없습니다.</div>}
           </div>
         </div>
       )}
@@ -473,12 +510,12 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
         <div>
           <div className="flex justify-between items-center mb-5">
             <p className="text-[14px] text-muted">홈 화면 "제조사별 보기" 카드입니다. 이름·태그·검색어·이미지를 설정합니다. (검색어 = 클릭 시 해당 제조사 장비를 찾는 키워드)</p>
-            <button onClick={() => setBrands(prev => [...prev, { id:'br_'+Date.now().toString().slice(-6), name:'새 제조사', q:'', tag:'', imageUrl:'' }])}
+            <button onClick={() => setDBrands(prev => [...prev, { id:'br_'+Date.now().toString().slice(-6), name:'새 제조사', q:'', tag:'', imageUrl:'' }])}
               className="text-[13px] bg-ink text-bg px-4 py-2 hover-lift inline-flex items-center gap-2 shrink-0"><Ico.plus className="w-3.5 h-3.5"/> 제조사 추가</button>
           </div>
           <div className="space-y-3">
-            {brands.map((b, i) => {
-              const upd = (patch) => setBrands(prev => prev.map((x,idx) => idx===i ? { ...x, ...patch } : x));
+            {dBrands.map((b, i) => {
+              const upd = (patch) => setDBrands(prev => prev.map((x,idx) => idx===i ? { ...x, ...patch } : x));
               return (
                 <div key={b.id} className="border border-line p-4 flex flex-col md:flex-row gap-4">
                   <div className="w-full md:w-40 aspect-[4/3] border border-line overflow-hidden bg-[#F0F0F0] shrink-0 flex items-center justify-center">
@@ -509,17 +546,17 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
                     </div>
                   </div>
                   <div className="flex md:flex-col gap-1 shrink-0">
-                    <button onClick={() => i>0 && setBrands(prev => { const a=[...prev]; [a[i-1],a[i]]=[a[i],a[i-1]]; return a; })}
+                    <button onClick={() => i>0 && setDBrands(prev => { const a=[...prev]; [a[i-1],a[i]]=[a[i],a[i-1]]; return a; })}
                       disabled={i===0} className="text-[12px] border border-line hover:border-ink px-2 py-1 disabled:opacity-30">↑</button>
-                    <button onClick={() => i<brands.length-1 && setBrands(prev => { const a=[...prev]; [a[i+1],a[i]]=[a[i],a[i+1]]; return a; })}
-                      disabled={i===brands.length-1} className="text-[12px] border border-line hover:border-ink px-2 py-1 disabled:opacity-30">↓</button>
-                    <button onClick={() => setBrands(prev => prev.filter((_,idx)=>idx!==i))}
+                    <button onClick={() => i<dBrands.length-1 && setDBrands(prev => { const a=[...prev]; [a[i+1],a[i]]=[a[i],a[i+1]]; return a; })}
+                      disabled={i===dBrands.length-1} className="text-[12px] border border-line hover:border-ink px-2 py-1 disabled:opacity-30">↓</button>
+                    <button onClick={() => setDBrands(prev => prev.filter((_,idx)=>idx!==i))}
                       className="text-muted hover:text-ink p-1"><Ico.trash className="w-4 h-4"/></button>
                   </div>
                 </div>
               );
             })}
-            {brands.length === 0 && <div className="border border-line py-12 text-center text-muted text-[14px]">등록된 제조사가 없습니다.</div>}
+            {dBrands.length === 0 && <div className="border border-line py-12 text-center text-muted text-[14px]">등록된 제조사가 없습니다.</div>}
           </div>
         </div>
       )}
@@ -529,12 +566,12 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
         <div>
           <div className="flex justify-between items-center mb-5">
             <p className="text-[14px] text-muted">장바구니에서 고객이 직접 선택해 적용하는 할인입니다. 노출 중인 할인만 장바구니에 나타나며, 최소 금액(소계) 조건을 채워야 선택할 수 있어요.</p>
-            <button onClick={() => setDiscounts(prev => [...prev, { id:'dc_'+Date.now().toString().slice(-6), label:'새 할인', type:'percent', value:10, min:0, active:true }])}
+            <button onClick={() => setDDiscounts(prev => [...prev, { id:'dc_'+Date.now().toString().slice(-6), label:'새 할인', type:'percent', value:10, min:0, active:true }])}
               className="text-[13px] bg-ink text-bg px-4 py-2 hover-lift inline-flex items-center gap-2 shrink-0"><Ico.plus className="w-3.5 h-3.5"/> 할인 추가</button>
           </div>
           <div className="space-y-3">
-            {discounts.map((d, i) => {
-              const upd = (patch) => setDiscounts(prev => prev.map((x,idx) => idx===i ? { ...x, ...patch } : x));
+            {dDiscounts.map((d, i) => {
+              const upd = (patch) => setDDiscounts(prev => prev.map((x,idx) => idx===i ? { ...x, ...patch } : x));
               return (
                 <div key={d.id} className={`border p-4 ${d.active===false ? 'border-line opacity-60' : 'border-ink'}`}>
                   <div className="flex items-center justify-between gap-3 mb-3">
@@ -545,7 +582,7 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
                       </span>
                       {d.active!==false ? '노출 중' : '숨김'}
                     </label>
-                    <button onClick={() => setDiscounts(prev => prev.filter((_,idx)=>idx!==i))} className="text-muted hover:text-ink p-1 shrink-0"><Ico.trash className="w-4 h-4"/></button>
+                    <button onClick={() => setDDiscounts(prev => prev.filter((_,idx)=>idx!==i))} className="text-muted hover:text-ink p-1 shrink-0"><Ico.trash className="w-4 h-4"/></button>
                   </div>
                   <div className="grid md:grid-cols-2 gap-3">
                     <div className="md:col-span-2">
@@ -579,22 +616,22 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
                 </div>
               );
             })}
-            {discounts.length === 0 && <div className="border border-line py-12 text-center text-muted text-[14px]">등록된 할인 이벤트가 없습니다.</div>}
+            {dDiscounts.length === 0 && <div className="border border-line py-12 text-center text-muted text-[14px]">등록된 할인 이벤트가 없습니다.</div>}
           </div>
         </div>
       )}
 
       {/* ── 촬영 영상(WORKS) 관리 ── */}
-      {tab==='works' && (
+      {tab==='dWorks' && (
         <div>
           <div className="flex justify-between items-center mb-5">
-            <p className="text-[14px] text-muted">홈 화면 "스케아트 장비 촬영 영상" 섹션입니다. 유튜브 링크와 설명을 넣으면 영상을 누를 때 좌측 영상·우측 설명 팝업이 떠요. <span className="text-ink">입력하면 자동 저장</span>됩니다.</p>
-            <button onClick={() => setWorks(prev => [...prev, { id:'wk_'+Date.now().toString().slice(-6), youtubeId:'', title:'', gear:'', desc:'' }])}
+            <p className="text-[14px] text-muted">홈 화면 "스케아트 장비 촬영 영상" 섹션입니다. 유튜브 링크와 설명을 넣으면 영상을 누를 때 좌측 영상·우측 설명 팝업이 떠요. <span className="text-ink">아래 "변경사항 저장"을 눌러야 반영</span>됩니다.</p>
+            <button onClick={() => setDWorks(prev => [...prev, { id:'wk_'+Date.now().toString().slice(-6), youtubeId:'', title:'', gear:'', desc:'' }])}
               className="text-[13px] bg-ink text-bg px-4 py-2 hover-lift inline-flex items-center gap-2 shrink-0"><Ico.plus className="w-3.5 h-3.5"/> 영상 추가</button>
           </div>
           <div className="space-y-4">
-            {works.map((w, i) => {
-              const upd = (patch) => setWorks(prev => prev.map((x,idx) => idx===i ? { ...x, ...patch } : x));
+            {dWorks.map((w, i) => {
+              const upd = (patch) => setDWorks(prev => prev.map((x,idx) => idx===i ? { ...x, ...patch } : x));
               const vid = youtubeId(w.youtubeId);
               return (
                 <div key={w.id} className="border border-line p-4 flex flex-col md:flex-row gap-4">
@@ -627,17 +664,36 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
                     </div>
                   </div>
                   <div className="flex md:flex-col gap-1 shrink-0">
-                    <button onClick={() => i>0 && setWorks(prev => { const a=[...prev]; [a[i-1],a[i]]=[a[i],a[i-1]]; return a; })}
+                    <button onClick={() => i>0 && setDWorks(prev => { const a=[...prev]; [a[i-1],a[i]]=[a[i],a[i-1]]; return a; })}
                       disabled={i===0} className="text-[12px] border border-line hover:border-ink px-2 py-1 disabled:opacity-30">↑</button>
-                    <button onClick={() => i<works.length-1 && setWorks(prev => { const a=[...prev]; [a[i+1],a[i]]=[a[i],a[i+1]]; return a; })}
-                      disabled={i===works.length-1} className="text-[12px] border border-line hover:border-ink px-2 py-1 disabled:opacity-30">↓</button>
-                    <button onClick={() => setWorks(prev => prev.filter((_,idx)=>idx!==i))}
+                    <button onClick={() => i<dWorks.length-1 && setDWorks(prev => { const a=[...prev]; [a[i+1],a[i]]=[a[i],a[i+1]]; return a; })}
+                      disabled={i===dWorks.length-1} className="text-[12px] border border-line hover:border-ink px-2 py-1 disabled:opacity-30">↓</button>
+                    <button onClick={() => setDWorks(prev => prev.filter((_,idx)=>idx!==i))}
                       className="text-muted hover:text-ink p-1"><Ico.trash className="w-4 h-4"/></button>
                   </div>
                 </div>
               );
             })}
-            {works.length === 0 && <div className="border border-line py-12 text-center text-muted text-[14px]">등록된 촬영 영상이 없습니다.</div>}
+            {dWorks.length === 0 && <div className="border border-line py-12 text-center text-muted text-[14px]">등록된 촬영 영상이 없습니다.</div>}
+          </div>
+        </div>
+      )}
+
+      {/* ── 콘텐츠 탭 하단 저장 바 ── */}
+      {CONTENT_TABS.includes(tab) && (
+        <div className="sticky bottom-0 left-0 right-0 mt-8 -mx-6 md:-mx-10 px-6 md:px-10 py-4 bg-bg/95 backdrop-blur border-t border-line flex items-center justify-between gap-3 z-30">
+          <span className="text-[13px] text-muted">
+            {savedFlash ? <span className="text-ink font-bold">✓ 저장되었습니다</span>
+              : dirty ? <span className="text-ink">저장하지 않은 변경사항이 있어요</span>
+              : '변경사항 없음'}
+          </span>
+          <div className="flex gap-2">
+            <button onClick={resetDraft} disabled={!dirty}
+              className="text-[13px] border border-line hover:border-ink px-4 py-2.5 disabled:opacity-30">되돌리기</button>
+            <button onClick={saveDraft} disabled={!dirty}
+              className="text-[13px] bg-ink text-bg px-6 py-2.5 hover-lift disabled:opacity-40 inline-flex items-center gap-2">
+              <Ico.check className="w-4 h-4"/> 변경사항 저장
+            </button>
           </div>
         </div>
       )}
