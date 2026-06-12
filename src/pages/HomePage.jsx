@@ -17,6 +17,10 @@ export function HomePage({ setPage, setCategory, onBrand }) {
   return (
     <>
       <Hero setPage={setPage} setCategory={setCategory}/>
+
+      {/* 스케아트 장비 촬영 영상 (히어로 바로 아래) */}
+      <WorksSection/>
+
       <CategoryGrid setPage={setPage} setCategory={setCategory}/>
       {/* Best */}
       <section className="px-6 md:px-10 max-w-[1400px] mx-auto pt-8 pb-8 md:pt-10 md:pb-10">
@@ -33,9 +37,6 @@ export function HomePage({ setPage, setCategory, onBrand }) {
           ))}
         </div>
       </section>
-
-      {/* 스케아트 장비 촬영 영상 */}
-      <WorksSection/>
 
       <BrandStrip onBrand={onBrand}/>
 

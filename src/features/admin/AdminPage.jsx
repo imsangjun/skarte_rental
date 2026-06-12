@@ -588,7 +588,7 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
       {tab==='works' && (
         <div>
           <div className="flex justify-between items-center mb-5">
-            <p className="text-[14px] text-muted">홈 화면 "스케아트 장비 촬영 영상" 섹션입니다. 유튜브 링크와 설명을 넣으면 영상을 누를 때 좌측 영상·우측 설명 팝업이 떠요.</p>
+            <p className="text-[14px] text-muted">홈 화면 "스케아트 장비 촬영 영상" 섹션입니다. 유튜브 링크와 설명을 넣으면 영상을 누를 때 좌측 영상·우측 설명 팝업이 떠요. <span className="text-ink">입력하면 자동 저장</span>됩니다.</p>
             <button onClick={() => setWorks(prev => [...prev, { id:'wk_'+Date.now().toString().slice(-6), youtubeId:'', title:'', gear:'', desc:'' }])}
               className="text-[13px] bg-ink text-bg px-4 py-2 hover-lift inline-flex items-center gap-2 shrink-0"><Ico.plus className="w-3.5 h-3.5"/> 영상 추가</button>
           </div>
