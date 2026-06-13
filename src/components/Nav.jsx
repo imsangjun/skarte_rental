@@ -60,6 +60,8 @@ export function Nav({ page, setPage, setCategory, cartCount, onCartOpen, user, o
             className={`underline-grow ${page==='location' ? 'text-ink' : 'text-muted hover:text-ink'}`}>오시는길</button>
           <button onClick={() => setPage('extra')}
             className={`underline-grow ${page==='extra' ? 'text-ink' : 'text-muted hover:text-ink'}`}>추가 장비 요청</button>
+          <button onClick={() => setPage('lookup')}
+            className={`underline-grow ${page==='lookup' ? 'text-ink' : 'text-muted hover:text-ink'}`}>문의 조회</button>
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
@@ -120,7 +122,9 @@ export function Nav({ page, setPage, setCategory, cartCount, onCartOpen, user, o
           <button onClick={() => goPage('location')}
             className={`w-full text-left px-6 py-4 border-b border-line text-[15px] ${page==='location'?'font-bold':'text-muted'}`}>오시는길</button>
           <button onClick={() => goPage('extra')}
-            className={`w-full text-left px-6 py-4 text-[15px] ${page==='extra'?'font-bold':'text-muted'}`}>추가 장비 요청</button>
+            className={`w-full text-left px-6 py-4 border-b border-line text-[15px] ${page==='extra'?'font-bold':'text-muted'}`}>추가 장비 요청</button>
+          <button onClick={() => goPage('lookup')}
+            className={`w-full text-left px-6 py-4 text-[15px] ${page==='lookup'?'font-bold':'text-muted'}`}>문의 조회</button>
         </div>
       )}
     </nav>

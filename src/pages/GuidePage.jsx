@@ -3,11 +3,11 @@ import { openKakao } from '../lib/format';
 
 export function GuidePage({ setPage }) {
   const steps = [
-    { n:'01', t:'문의', d:'카카오톡으로 원하시는 장비와 대여 일정을 보내주세요. 장바구니에 담아 한 번에 문의하면 더 편리합니다.' },
-    { n:'02', t:'견적·확인', d:'재고를 확인한 뒤 견적과 입금 계좌를 안내드립니다.' },
-    { n:'03', t:'입금·확정', d:'입금이 확인되는 시점에 예약이 확정됩니다.' },
-    { n:'04', t:'수령', d:'인천 지점 방문 또는 택배 수령 중 선택하세요.' },
-    { n:'05', t:'반납', d:'대여 종료일에 방문 또는 택배로 반납합니다. 정상 반납 시 보증금은 전액 환불됩니다.' },
+    { n:'01', t:'장비 담기', d:'원하는 장비를 장바구니에 담고 대여 시작일·일수·수량을 선택하세요. 목록에 없는 장비는 "추가 장비 요청"으로 남길 수 있어요.' },
+    { n:'02', t:'문의 접수', d:'성함·연락처를 입력하고 신청하면 접수번호(예: #1042)가 발급됩니다. 이 번호가 문의를 확인하는 열쇠예요.' },
+    { n:'03', t:'카카오톡 전송', d:'접수 완료 화면에서 "카카오톡 채널로 보내기"를 누르면 접수번호와 문의 내용이 담긴 메시지가 준비됩니다. 채널로 전송해 주세요.' },
+    { n:'04', t:'견적·확정', d:'재고 확인 후 견적과 입금 계좌를 안내드려요. 입금이 확인되면 예약이 확정되고, 장비가 예약 일정에 등록됩니다.' },
+    { n:'05', t:'수령·반납', d:'인천 지점 방문 또는 택배로 수령하고, 대여 종료일에 동일한 방법으로 반납합니다. 정상 반납 시 보증금은 전액 환불됩니다.' },
   ];
   const policies = [
     { t:'대여 요금', d:'일일 대여료가 기준이며, 3일 이상 10%, 7일 이상 20%가 자동 할인됩니다. 30일 이상 장기 대여는 별도 문의해 주세요.' },
@@ -22,13 +22,15 @@ export function GuidePage({ setPage }) {
     { q:'보증금이 따로 있나요?', a:'장비 가격대에 따라 보증금이 책정되며, 정상 반납 시 전액 환불됩니다. 자세한 금액은 문의 시 안내드립니다.' },
     { q:'파손이나 분실 시에는 어떻게 되나요?', a:'파손·분실 시 수리비 또는 동일 장비 시세에 준하는 금액을 청구해 드립니다. 작업 전 보험 가입을 권장드립니다.' },
     { q:'당일 대여도 가능한가요?', a:'재고 상황에 따라 가능합니다. 다만 안정적인 작업을 위해 최소 1-2일 전 예약을 권장드립니다.' },
+    { q:'접수번호를 잊어버렸어요.', a:'상단 메뉴의 "문의 조회"에서 문의하실 때 입력한 연락처를 넣으면 접수번호와 처리 상태를 다시 확인할 수 있어요. 그래도 어려우시면 카카오톡 채널에 성함과 연락처를 보내주시면 저희가 찾아 안내해 드립니다.' },
+    { q:'문의하면 바로 예약이 확정되나요?', a:'문의 접수만으로는 예약이 확정되지 않습니다. 재고 확인과 견적 안내 후, 입금이 확인되는 시점에 예약이 확정되고 장비가 예약 일정에 등록됩니다. 처리 상태는 "문의 조회"에서 확인하실 수 있어요.' },
   ];
   return (
     <section className="pt-28 md:pt-36 px-6 md:px-10 max-w-[1100px] mx-auto pb-24">
       <div className="font-mono text-[12px] uppercase tracking-[0.2em] text-muted mb-3">— 이용 안내</div>
       <h1 className="font-display font-bold text-4xl md:text-6xl leading-none mb-4">이용 가이드</h1>
       <p className="text-muted text-[15px] max-w-xl mb-16">
-        스케아트는 카카오톡 문의 기반으로 운영됩니다. 처음이셔도 메시지 한 통이면 충분해요.
+        스케아트는 사이트에서 문의를 접수하고 카카오톡으로 안내해 드려요. 처음이셔도 아래 절차만 따라오시면 됩니다.
       </p>
 
       {/* 대여 절차 */}
@@ -42,6 +44,39 @@ export function GuidePage({ setPage }) {
             <div className="col-span-12 md:col-span-8 text-[14px] text-muted leading-relaxed">{s.d}</div>
           </div>
         ))}
+      </div>
+
+      {/* 접수번호 안내 */}
+      <div className="font-mono text-[12px] uppercase tracking-[0.2em] text-muted mb-3">— 접수번호 안내</div>
+      <h2 className="font-display font-bold text-3xl md:text-4xl leading-none mb-6">접수번호란?</h2>
+      <div className="bg-[#F7F7F7] border border-line p-6 md:p-10 mb-20">
+        <p className="text-[15px] leading-relaxed mb-6">
+          스케아트는 카카오톡으로 최종 안내를 드려요. 카카오톡 대화만으로는 어떤 문의인지 확인이 어렵기 때문에,
+          문의하실 때 발급되는 <span className="font-bold">접수번호</span>로 빠르고 정확하게 확인해 드립니다.
+        </p>
+        <div className="grid md:grid-cols-3 gap-px bg-line">
+          <div className="bg-bg p-5">
+            <div className="font-mono text-[12px] text-muted mb-2">STEP 1</div>
+            <div className="font-display text-lg mb-1.5">접수번호 받기</div>
+            <p className="text-[13px] text-muted leading-relaxed">문의를 신청하면 화면에 접수번호(#1042)가 표시돼요. "복사" 버튼으로 간편하게 복사하세요.</p>
+          </div>
+          <div className="bg-bg p-5">
+            <div className="font-mono text-[12px] text-muted mb-2">STEP 2</div>
+            <div className="font-display text-lg mb-1.5">카카오톡에 전송</div>
+            <p className="text-[13px] text-muted leading-relaxed">카카오톡 채널에 접수번호와 성함·연락처를 보내주시면 담당자가 해당 문의를 바로 찾아 안내드려요.</p>
+          </div>
+          <div className="bg-bg p-5">
+            <div className="font-mono text-[12px] text-muted mb-2">STEP 3</div>
+            <div className="font-display text-lg mb-1.5">상태 조회</div>
+            <p className="text-[13px] text-muted leading-relaxed">접수번호를 잊으셨어도 걱정 마세요. "문의 조회"에서 연락처만 입력하면 처리 상태를 확인할 수 있어요.</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-3 mt-6">
+          <button onClick={() => setPage('lookup')}
+            className="border border-ink px-5 py-3 text-[13px] hover-lift">내 문의 조회하기</button>
+          <button onClick={() => setPage('extra')}
+            className="border border-line hover:border-ink px-5 py-3 text-[13px] hover-lift">추가 장비 요청</button>
+        </div>
       </div>
 
       {/* 대여 정책 */}

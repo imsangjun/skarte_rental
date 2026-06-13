@@ -76,6 +76,8 @@ export function CartPanel({ cart, onClose, onUpdate, onRemove, onClear, onRecord
   const saved = periodSaved + couponSaved;
 
   // 대여 시작일 (기본: 내일)
+  const [orderName, setOrderName] = useState('');
+  const [orderContact, setOrderContact] = useState('');
   const [startDate, setStartDate] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() + 1);
     return d.toISOString().slice(0, 10);
@@ -104,11 +106,20 @@ export function CartPanel({ cart, onClose, onUpdate, onRemove, onClear, onRecord
     const couponLine = couponSaved > 0 ? `\n쿠폰(${selCoupon.label}) · -${won(couponSaved)}` : '';
     const p7Line = period7 > 0 ? `\n7일+ 장기 할인(-20%) · -${won(period7)}` : '';
     const p3Line = period3 > 0 ? `\n3일+ 기간 할인(-10%) · -${won(period3)}` : '';
-    const dateLine = startDate ? `대여 시작일 · ${fmtDate(startDate)}\n\n` : '';
-    const msg = `[대여 문의]\n\n${dateLine}${lines}\n\n────────────${p7Line}${p3Line}${couponLine}\n합계 · ${won(total)}`;
-    if (user && onRecordOrder) {
-      onRecordOrder({ items: selItems.map(i => ({ id:i.id, qty:i.qty, days:i.days })), total, startDate });
+    const dateLine = startDate ? `대여 시작일 · ${fmtDate(startDate)}\n` : '';
+    const whoLine = (orderName || orderContact) ? `${orderName ? `성함 · ${orderName}\n` : ''}${orderContact ? `연락처 · ${orderContact}\n` : ''}` : '';
+
+    // 문의 저장 + 접수번호 발급 (로그인 무관)
+    let refLine = '';
+    if (onRecordOrder) {
+      const saved = onRecordOrder({
+        items: selItems.map(i => ({ id:i.id, name:i.gear.name, qty:i.qty, days:i.days })),
+        total, startDate, type:'cart', name: orderName, contact: orderContact,
+      });
+      if (saved && saved.refNo) refLine = `접수번호 · #${saved.refNo}\n`;
     }
+
+    const msg = `[대여 문의]\n\n${refLine}${whoLine}${dateLine}\n${lines}\n\n────────────${p7Line}${p3Line}${couponLine}\n합계 · ${won(total)}\n\n※ 카카오톡 채널에서 위 접수번호를 보내주시면 빠르게 확인해 드려요.`;
     openKakao(msg);
   };
 
@@ -307,6 +318,21 @@ export function CartPanel({ cart, onClose, onUpdate, onRemove, onClear, onRecord
                     <p className="text-[12px] text-muted mt-1.5">{fmtDate(startDate)}부터 대여 (반납일은 항목별 일수 기준)</p>
                   )}
                 </div>
+
+                {/* 성함·연락처 (문의 조회용) */}
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[13px] font-bold text-ink block mb-2">성함</label>
+                    <input value={orderName} onChange={e => setOrderName(e.target.value)} placeholder="예) 김감독"
+                      className="w-full border border-line focus:border-ink outline-none px-3 py-2.5 text-[14px] bg-bg"/>
+                  </div>
+                  <div>
+                    <label className="text-[13px] font-bold text-ink block mb-2">연락처</label>
+                    <input value={orderContact} onChange={e => setOrderContact(e.target.value)} placeholder="010-0000-0000"
+                      className="w-full border border-line focus:border-ink outline-none px-3 py-2.5 text-[14px] bg-bg"/>
+                  </div>
+                </div>
+                <p className="text-[12px] text-muted mt-1.5">연락처로 나중에 문의 내역을 조회할 수 있어요.</p>
               </div>
 
               {/* 최종 결제 (고정 하단) */}

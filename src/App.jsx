@@ -15,6 +15,7 @@ import { sb, store } from './lib/supabase';
 import { GuidePage } from './pages/GuidePage';
 import { HomePage } from './pages/HomePage';
 import { ExtraGearPage } from './pages/ExtraGearPage';
+import { LookupPage } from './pages/LookupPage';
 import { LocationPage } from './pages/LocationPage';
 
 export function App() {
@@ -141,9 +142,56 @@ export function App() {
   };
 
   // ── 문의 내역 기록 ──
-  const recordOrder = ({ items, total }) => {
-    const o = { id: Date.now().toString().slice(-6), date: new Date().toISOString().slice(0,10), items, total };
+  // 문의 접수: 접수번호 발급 + 상태(pending) 저장, 저장된 객체 반환
+  const recordOrder = ({ items, total, startDate, type = 'cart', gear, situation, contact, name }) => {
+    // 접수번호: 1001부터 1씩 증가
+    const lastNo = orders.reduce((m, o) => Math.max(m, o.refNo || 1000), 1000);
+    const refNo = lastNo + 1;
+    const o = {
+      id: Date.now().toString().slice(-6),
+      refNo,
+      type,                 // 'cart' | 'extra'
+      status: 'pending',    // 'pending' | 'accepted' | 'rejected'
+      date: new Date().toISOString().slice(0,10),
+      createdAt: new Date().toISOString(),
+      items: items || [],
+      total: total || 0,
+      startDate: startDate || '',
+      gear: gear || '',
+      situation: situation || '',
+      contact: contact || '',
+      name: name || '',
+    };
     setOrders(prev => [...prev, o]);
+    return o;
+  };
+
+  // 문의 수락/거절. 장바구니 문의 수락 시 예약 일정 자동 등록
+  const updateOrderStatus = (orderId, status) => {
+    setOrders(prev => prev.map(o => {
+      if (o.id !== orderId) return o;
+      // 장바구니 문의 수락 → 예약 일정 등록 (중복 방지)
+      if (status === 'accepted' && o.status !== 'accepted' && o.type === 'cart' && o.startDate && Array.isArray(o.items)) {
+        const newRentals = o.items
+          .filter(it => it.id && !String(it.id).startsWith('set_'))
+          .map((it, idx) => ({
+            id: `ord${o.refNo}_${idx}`,
+            gearId: it.id,
+            qty: it.qty || 1,
+            renter: o.name || `문의 #${o.refNo}`,
+            start: o.startDate,
+            days: it.days || 1,
+            fromOrder: o.refNo,
+          }));
+        if (newRentals.length) {
+          setRentals(prevR => {
+            const exist = new Set(prevR.map(r => r.id));
+            return [...prevR, ...newRentals.filter(r => !exist.has(r.id))];
+          });
+        }
+      }
+      return { ...o, status };
+    }));
   };
 
   const openCart = () => setCartOpen(true);
@@ -157,7 +205,8 @@ export function App() {
         {page === 'home'  && <HomePage setPage={setPage} setCategory={setCategory} onBrand={(q) => { setGearSearch(q); setCategory('all'); setPage('gear'); }}/>}
         {page === 'gear'  && <GearPage category={category} setCategory={setCategory} onItemClick={setSelectedItem} wishlist={wishlist} onToggleWish={toggleWish} query={gearSearch} setQuery={setGearSearch} rentals={rentals}/>}
         {page === 'guide' && <GuidePage setPage={setPage}/>}
-        {page === 'extra' && <ExtraGearPage setPage={setPage}/>}
+        {page === 'extra' && <ExtraGearPage setPage={setPage} onRecordOrder={recordOrder}/>}
+        {page === 'lookup' && <LookupPage setPage={setPage} orders={orders}/>}
         {page === 'location' && <LocationPage setPage={setPage}/>}
         {page === 'mypage' && (user
           ? <MyPage user={user} wishlist={wishlist} orders={orders} cart={cart}
@@ -165,7 +214,7 @@ export function App() {
               onOpenCart={openCart} setPage={setPage} setCategory={setCategory}/>
           : <RequireLogin onAuthOpen={() => setAuthOpen(true)}/>)}
         {page === 'admin' && (isAdmin
-          ? <AdminPage equipment={equipment} setEquipment={setEquipment} orders={orders} rentals={rentals} setRentals={setRentals}
+          ? <AdminPage equipment={equipment} setEquipment={setEquipment} orders={orders} setOrders={setOrders} updateOrderStatus={updateOrderStatus} rentals={rentals} setRentals={setRentals}
               homeBanner={homeBanner} setHomeBanner={setHomeBanner}
               eventBanners={eventBanners} setEventBanners={setEventBanners}
               sets={sets} setSets={setSets} bestIds={bestIds} setBestIds={setBestIds}

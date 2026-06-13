@@ -50,7 +50,7 @@ export function MyPage({ user, wishlist, orders, cart, onLogout, onItemClick, on
             {orders.slice().reverse().map((o) => (
               <div key={o.id} className="bg-bg p-5 md:p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="font-mono text-[12px] text-muted">#{o.id} · {o.date}</div>
+                  <div className="font-mono text-[12px] text-muted">#{o.refNo || o.id} · {o.date}{o.status==='accepted' ? ' · 수락됨' : o.status==='rejected' ? ' · 거절됨' : ' · 대기 중'}</div>
                   <div className="font-mono text-[13px] font-bold">{won(o.total)}</div>
                 </div>
                 <div className="space-y-1.5">

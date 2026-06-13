@@ -9,7 +9,7 @@ import { priceLabel, won } from '../../lib/format';
 import { youtubeId } from '../content/WorksSection';
 import { store } from '../../lib/supabase';
 
-export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals,
+export function AdminPage({ equipment, setEquipment, orders, setOrders, updateOrderStatus, rentals, setRentals,
   homeBanner, setHomeBanner, eventBanners, setEventBanners, sets, setSets, bestIds, setBestIds,
   notices, setNotices, brands, setBrands, discounts, setDiscounts, works, setWorks, onExit }) {
   const [tab, setTab] = useState('dash');
@@ -18,6 +18,7 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
   const [gearCat, setGearCat] = useState('all');
   const [gearQuery, setGearQuery] = useState('');
   const [orderQuery, setOrderQuery] = useState('');
+  const [orderFilter, setOrderFilter] = useState('all');
   const [userQuery, setUserQuery] = useState('');
   const users = store.read('skeart_users', []).filter(u => u.email !== ADMIN_EMAIL);
 
@@ -86,7 +87,7 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
   const tabs = [
     { id:'dash',  label:'대시보드' },
     { id:'gear',  label:`장비 관리 · ${equipment.length}` },
-    { id:'order', label:`문의 내역 · ${orders.length}` },
+    { id:'order', label:`문의 관리 · ${orders.length}${orders.filter(o=>(o.status||'pending')==='pending').length ? ` (대기 ${orders.filter(o=>(o.status||'pending')==='pending').length})` : ''}` },
     { id:'user',  label:`회원 · ${users.length}` },
     { id:'set',   label:`세트 상품 · ${dSets.length}` },
     { id:'best',  label:`베스트 · ${dBestIds.length}` },
@@ -209,39 +210,98 @@ export function AdminPage({ equipment, setEquipment, orders, rentals, setRentals
         </div>
       )}
 
-      {/* 문의 내역 */}
+      {/* 문의 관리 */}
       {tab==='order' && (
         orders.length === 0 ? (
-          <div className="border border-line py-20 text-center text-muted">접수된 문의 내역이 없습니다.</div>
+          <div className="border border-line py-20 text-center text-muted">접수된 문의가 없습니다.</div>
         ) : (
           <div>
-            <div className="flex justify-end mb-4">
-              <input value={orderQuery} onChange={e => setOrderQuery(e.target.value)} placeholder="문의번호·장비명 검색"
-                className="text-[13px] border border-line focus:border-ink outline-none px-3 py-2 bg-transparent w-56"/>
+            <div className="flex flex-wrap gap-2 justify-between items-center mb-4">
+              <div className="flex gap-1.5">
+                {[['all','전체'],['pending','대기'],['accepted','수락'],['rejected','거절']].map(([k,label]) => (
+                  <button key={k} onClick={() => setOrderFilter(k)}
+                    className={`text-[12px] px-3 py-1.5 border ${orderFilter===k ? 'bg-ink text-bg border-ink' : 'border-line hover:border-ink'}`}>
+                    {label}{k!=='all' && ` · ${orders.filter(o => (o.status||'pending')===k).length}`}
+                  </button>
+                ))}
+              </div>
+              <input value={orderQuery} onChange={e => setOrderQuery(e.target.value)} placeholder="접수번호·장비명 검색"
+                className="text-[13px] border border-line focus:border-ink outline-none px-3 py-2 bg-transparent w-full sm:w-56"/>
             </div>
             {(() => {
-              const q = orderQuery.toLowerCase();
-              const list = orders.slice().reverse().filter(o =>
-                q === '' || o.id.toLowerCase().includes(q) ||
-                o.items.some(it => { const g = equipment.find(e=>e.id===it.id); return g && g.name.toLowerCase().includes(q); })
-              );
-              if (list.length === 0) return <div className="border border-line py-16 text-center text-muted text-[14px]">검색 결과가 없습니다.</div>;
+              const q = orderQuery.toLowerCase().replace('#','');
+              const list = orders.slice().reverse().filter(o => {
+                const st = o.status || 'pending';
+                if (orderFilter !== 'all' && st !== orderFilter) return false;
+                if (q === '') return true;
+                if (String(o.refNo||'').includes(q)) return true;
+                if (o.id.toLowerCase().includes(q)) return true;
+                if (o.gear && o.gear.toLowerCase().includes(q)) return true;
+                return (o.items||[]).some(it => (it.name||'').toLowerCase().includes(q));
+              });
+              if (list.length === 0) return <div className="border border-line py-16 text-center text-muted text-[14px]">해당하는 문의가 없습니다.</div>;
+              const stBadge = (st) => st==='accepted' ? 'bg-ink text-bg' : st==='rejected' ? 'bg-line text-muted line-through' : 'border border-ink text-ink';
+              const stLabel = (st) => st==='accepted' ? '수락됨' : st==='rejected' ? '거절됨' : '대기 중';
               return (
-                <div className="space-y-px bg-line border border-line">
-                  {list.map(o => (
-                    <div key={o.id} className="bg-bg p-5">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="font-mono text-[12px] text-muted">#{o.id} · {o.date}</div>
-                        <div className="font-mono text-[13px] font-bold">{won(o.total)}</div>
+                <div className="space-y-3">
+                  {list.map(o => {
+                    const st = o.status || 'pending';
+                    return (
+                    <div key={o.id} className={`border p-5 ${st==='pending' ? 'border-ink' : 'border-line'}`}>
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-display text-lg font-bold">#{o.refNo || o.id}</span>
+                            <span className={`text-[11px] font-mono px-2 py-0.5 ${stBadge(st)}`}>{stLabel(st)}</span>
+                            <span className="text-[11px] font-mono px-2 py-0.5 border border-line text-muted">{o.type==='extra' ? '추가장비' : '대여'}</span>
+                          </div>
+                          <div className="font-mono text-[12px] text-muted mt-1">{o.date}{o.startDate ? ` · 대여시작 ${o.startDate}` : ''}</div>
+                        </div>
+                        {o.total > 0 && <div className="font-mono text-[14px] font-bold shrink-0">{won(o.total)}</div>}
                       </div>
-                      <div className="space-y-1">
-                        {o.items.map((it,i) => {
-                          const g = equipment.find(e=>e.id===it.id);
-                          return <div key={i} className="text-[13px]">{g?g.name:it.id} <span className="font-mono text-[12px] text-muted">· {it.days}일 × {it.qty}대</span></div>;
-                        })}
+
+                      {/* 내용 */}
+                      {o.type==='extra' ? (
+                        <div className="text-[13px] space-y-1 mb-3">
+                          <div><span className="text-muted">요청 장비:</span> {o.gear}</div>
+                          {o.situation && <div><span className="text-muted">상황:</span> {o.situation}</div>}
+                          {o.contact && <div><span className="text-muted">연락처:</span> {o.contact}</div>}
+                        </div>
+                      ) : (
+                        <div className="space-y-1 mb-3">
+                          {(o.items||[]).map((it,i) => {
+                            const g = equipment.find(e=>e.id===it.id);
+                            return <div key={i} className="text-[13px]">{it.name || (g?g.name:it.id)} <span className="font-mono text-[12px] text-muted">· {it.days}일 × {it.qty}대</span></div>;
+                          })}
+                        </div>
+                      )}
+
+                      {/* 액션 */}
+                      <div className="flex items-center justify-between gap-2 pt-3 border-t border-line">
+                        <span className="text-[12px] text-muted">
+                          {st==='pending' ? '카톡으로 받은 성함·연락처를 확인 후 처리하세요' :
+                           st==='accepted' && o.type==='cart' ? '예약 일정에 등록됨' : ''}
+                        </span>
+                        <div className="flex gap-2 shrink-0">
+                          {st !== 'accepted' && (
+                            <button onClick={() => updateOrderStatus(o.id, 'accepted')}
+                              className="text-[12px] bg-ink text-bg px-3 py-1.5 hover-lift">수락</button>
+                          )}
+                          {st !== 'rejected' && (
+                            <button onClick={() => updateOrderStatus(o.id, 'rejected')}
+                              className="text-[12px] border border-line hover:border-ink px-3 py-1.5">거절</button>
+                          )}
+                          {st !== 'pending' && (
+                            <button onClick={() => updateOrderStatus(o.id, 'pending')}
+                              className="text-[12px] border border-line hover:border-ink px-3 py-1.5 text-muted">대기로</button>
+                          )}
+                          <button onClick={() => { if (confirm(`문의 #${o.refNo||o.id}을(를) 삭제할까요?`)) setOrders(prev => prev.filter(x => x.id !== o.id)); }}
+                            className="text-muted hover:text-ink p-1.5"><Ico.trash className="w-4 h-4"/></button>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               );
             })()}
